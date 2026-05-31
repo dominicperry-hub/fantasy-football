@@ -225,11 +225,11 @@ export default function Registry() {
               </button>
             </div>
           </div>
-        ) : (
+        ) : activeTab === "unsold" ? (
           <div style={{ background: "#111a11", border: "1px solid #2d5a2d", borderRadius: "8px", padding: "20px", marginBottom: "16px", textAlign: "center", color: "#4a8a4a" }}>
             🎉 Auction complete — all players assigned!
           </div>
-        )}
+        ) : null}
 
         {/* Progress */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", marginBottom: "16px" }}>
