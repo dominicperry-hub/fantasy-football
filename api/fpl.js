@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'No endpoint specified' });
   }
 
-  const url = `https://fantasy.premierleague.com/api/${endpoint}/`;
+  const url = `https://fantasy.premierleague.com/api/${endpoint}`;
 
   try {
     const response = await fetch(url);
