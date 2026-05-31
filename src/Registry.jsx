@@ -164,7 +164,7 @@ export default function Registry() {
       <div style={{ maxWidth: "900px", margin: "0 auto", padding: "12px 16px" }}>
 
         {/* Current Player */}
-        {currentPlayer ? (
+        {activeTab === "unsold" && currentPlayer ? (
           <div style={{ background: "linear-gradient(135deg, #1a3a1a, #0d2b0d)", border: "2px solid #4a8a4a", borderRadius: "8px", padding: "16px", marginBottom: "16px" }}>
             <div style={{ fontSize: "10px", letterSpacing: "3px", color: "#4a8a4a", textTransform: "uppercase", marginBottom: "10px" }}>Current Player</div>
             <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
