@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Registry from "./Registry";
 
 const PROXY_URL = "/api/fpl";
 
@@ -210,6 +211,7 @@ function TeamScorer({ team, gwStats, teamConcededMap }) {
 }
 
 export default function App() {
+  const [page, setPage] = useState("scoring");
   const [gwStats, setGwStats] = useState(null);
   const [teamConcededMap, setTeamConcededMap] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -246,18 +248,29 @@ export default function App() {
     setLoading(false);
   }
 
+  const nav = (
+    <div style={{ display: "flex", justifyContent: "center", gap: "8px", padding: "12px 16px", background: "#0d150d", borderBottom: "1px solid #1a3a1a" }}>
+      {["scoring", "registry"].map(p => (
+        <button key={p} onClick={() => setPage(p)} style={{
+          padding: "6px 20px",
+          background: page === p ? "linear-gradient(135deg, #2d5a2d, #1a4a1a)" : "transparent",
+          border: `1px solid ${page === p ? "#4a8a4a" : "#2d3a2d"}`,
+          borderRadius: "4px", color: page === p ? "#c8e6c9" : "#4a8a4a",
+          fontSize: "11px", letterSpacing: "2px", textTransform: "uppercase", cursor: "pointer"
+        }}>{p}</button>
+      ))}
+    </div>
+  );
+
+  if (page === "registry") return <><div>{nav}</div><Registry /></>;
+
   return (
     <div style={{ minHeight: "100vh", background: "#0a0f0a", color: "#e8f5e9", fontFamily: "'Georgia', serif" }}>
-      <div style={{
-        background: "linear-gradient(135deg, #1a3a1a, #0a1f0a)",
-        borderBottom: "2px solid #2d5a2d", padding: "28px 24px 20px", textAlign: "center",
-      }}>
-        <div style={{ fontSize: "11px", letterSpacing: "4px", color: "#4a8a4a", marginBottom: "6px", textTransform: "uppercase" }}>
-          Fantasy League · GW38 Scoring
-        </div>
+      <div style={{ background: "linear-gradient(135deg, #1a3a1a, #0a1f0a)", borderBottom: "2px solid #2d5a2d", padding: "28px 24px 20px", textAlign: "center" }}>
+        <div style={{ fontSize: "11px", letterSpacing: "4px", color: "#4a8a4a", marginBottom: "6px", textTransform: "uppercase" }}>Fantasy League · GW38 Scoring</div>
         <h1 style={{ margin: 0, fontSize: "26px", fontWeight: "normal", color: "#c8e6c9" }}>2025/26 Season</h1>
       </div>
-
+      {nav}
       <div style={{ maxWidth: "680px", margin: "0 auto", padding: "24px 16px" }}>
         {!gwStats && (
           <button onClick={loadData} disabled={loading} style={{
@@ -271,13 +284,11 @@ export default function App() {
             {loading ? `⏳ ${status}` : "▶  Load GW38 Scores"}
           </button>
         )}
-
         {error && (
           <div style={{ background: "#1a0a0a", border: "1px solid #5a2d2d", borderRadius: "8px", padding: "16px", marginBottom: "20px", color: "#ef9a9a", fontSize: "13px" }}>
             ⚠ {error}
           </div>
         )}
-
         {gwStats && teamConcededMap && (
           <>
             {TEAMS.map((team, i) => (
