@@ -247,67 +247,6 @@ export default function Registry() {
           </div>
         </div>
 
-        {/* Manager spend panel */}
-        <div style={{ background: "#111a11", border: "1px solid #2d5a2d", borderRadius: "6px", padding: "12px", marginBottom: "16px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-            <div style={{ fontSize: "10px", color: "#4a8a4a", textTransform: "uppercase", letterSpacing: "2px" }}>Manager Budgets</div>
-            {!showSpend ? (
-              !confirmReveal ? (
-                <button onClick={() => setConfirmReveal(true)} style={{
-                  background: "#1a2a1a", border: "1px solid #3a5a3a", borderRadius: "4px",
-                  color: "#66bb6a", fontSize: "11px", padding: "4px 10px", cursor: "pointer"
-                }}>Reveal Spend</button>
-              ) : (
-                <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                  <span style={{ fontSize: "11px", color: "#f59e0b" }}>Reveal to everyone?</span>
-                  <button onClick={() => { setShowSpend(true); setConfirmReveal(false); }} style={{
-                    background: "#3a1a1a", border: "1px solid #8a4a4a", borderRadius: "4px",
-                    color: "#ef9a9a", fontSize: "11px", padding: "4px 10px", cursor: "pointer"
-                  }}>Yes, reveal</button>
-                  <button onClick={() => setConfirmReveal(false)} style={{
-                    background: "#1a2a1a", border: "1px solid #3a5a3a", borderRadius: "4px",
-                    color: "#66bb6a", fontSize: "11px", padding: "4px 10px", cursor: "pointer"
-                  }}>Cancel</button>
-                </div>
-              )
-            ) : (
-              <button onClick={() => setShowSpend(false)} style={{
-                background: "#1a2a1a", border: "1px solid #3a5a3a", borderRadius: "4px",
-                color: "#66bb6a", fontSize: "11px", padding: "4px 10px", cursor: "pointer"
-              }}>Hide Spend</button>
-            )}
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: "6px" }}>
-            {MANAGERS.map(m => {
-              const stats = managerStats[m];
-              const remaining = BUDGET - stats.spent;
-              const overspent = remaining < 0;
-              return (
-                <div key={m} style={{
-                  background: "#0d150d",
-                  border: `1px solid ${overspent && showSpend ? "#8a2a2a" : "#1e3a1e"}`,
-                  borderRadius: "4px", padding: "8px 10px"
-                }}>
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ color: "#c8e6c9", fontSize: "13px" }}>{m}</span>
-                    <span style={{ color: "#4a8a4a", fontSize: "10px" }}>{stats.players}p</span>
-                  </div>
-                  {showSpend ? (
-                    <div style={{ marginTop: "3px" }}>
-                      <div style={{ fontSize: "11px", color: "#81c784" }}>£{stats.spent.toFixed(2)}m spent</div>
-                      <div style={{ fontSize: "11px", color: overspent ? "#ef9a9a" : "#66bb6a" }}>
-                        {overspent ? `⚠ Over by £${Math.abs(remaining).toFixed(2)}m` : `£${remaining.toFixed(2)}m left`}
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{ marginTop: "3px", fontSize: "11px", color: "#2d4a2d" }}>••••••••</div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
         {/* Tabs */}
         <div style={{ display: "flex", gap: "6px", marginBottom: "12px" }}>
           {[
@@ -376,7 +315,52 @@ export default function Registry() {
 
         {/* Sold tab */}
         {activeTab === "sold" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+  <div>
+    {/* Manager spend panel */}
+    <div style={{ background: "#111a11", border: "1px solid #2d5a2d", borderRadius: "6px", padding: "12px", marginBottom: "16px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+        <div style={{ fontSize: "10px", color: "#4a8a4a", textTransform: "uppercase", letterSpacing: "2px" }}>Manager Budgets</div>
+        {!showSpend ? (
+          !confirmReveal ? (
+            <button onClick={() => setConfirmReveal(true)} style={{ background: "#1a2a1a", border: "1px solid #3a5a3a", borderRadius: "4px", color: "#66bb6a", fontSize: "11px", padding: "4px 10px", cursor: "pointer" }}>Reveal Spend</button>
+          ) : (
+            <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+              <span style={{ fontSize: "11px", color: "#f59e0b" }}>Reveal to everyone?</span>
+              <button onClick={() => { setShowSpend(true); setConfirmReveal(false); }} style={{ background: "#3a1a1a", border: "1px solid #8a4a4a", borderRadius: "4px", color: "#ef9a9a", fontSize: "11px", padding: "4px 10px", cursor: "pointer" }}>Yes, reveal</button>
+              <button onClick={() => setConfirmReveal(false)} style={{ background: "#1a2a1a", border: "1px solid #3a5a3a", borderRadius: "4px", color: "#66bb6a", fontSize: "11px", padding: "4px 10px", cursor: "pointer" }}>Cancel</button>
+            </div>
+          )
+        ) : (
+          <button onClick={() => setShowSpend(false)} style={{ background: "#1a2a1a", border: "1px solid #3a5a3a", borderRadius: "4px", color: "#66bb6a", fontSize: "11px", padding: "4px 10px", cursor: "pointer" }}>Hide Spend</button>
+        )}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: "6px" }}>
+        {MANAGERS.map(m => {
+          const stats = managerStats[m];
+          const remaining = BUDGET - stats.spent;
+          const overspent = remaining < 0;
+          return (
+            <div key={m} style={{ background: "#0d150d", border: `1px solid ${overspent && showSpend ? "#8a2a2a" : "#1e3a1e"}`, borderRadius: "4px", padding: "8px 10px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "#c8e6c9", fontSize: "13px" }}>{m}</span>
+                <span style={{ color: "#4a8a4a", fontSize: "10px" }}>{stats.players}p</span>
+              </div>
+              {showSpend ? (
+                <div style={{ marginTop: "3px" }}>
+                  <div style={{ fontSize: "11px", color: "#81c784" }}>£{stats.spent.toFixed(2)}m spent</div>
+                  <div style={{ fontSize: "11px", color: overspent ? "#ef9a9a" : "#66bb6a" }}>
+                    {overspent ? `⚠ Over by £${Math.abs(remaining).toFixed(2)}m` : `£${remaining.toFixed(2)}m left`}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ marginTop: "3px", fontSize: "11px", color: "#2d4a2d" }}>••••••••</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
             {soldPlayers.length === 0 && <div style={{ color: "#4a8a4a", fontSize: "13px", padding: "16px", textAlign: "center" }}>No players sold yet</div>}
             {soldPlayers.map(p => {
               const entry = registry[p.id] || {};
@@ -407,6 +391,7 @@ export default function Registry() {
               );
             })}
           </div>
+    </div>
         )}
 
         {/* Shit tab */}
