@@ -5,6 +5,7 @@ const MANAGERS = [
   "Ry", "Dan", "Paul", "Will", "Simmons", "Fish", "Joe"
 ];
 
+const BUDGET = 100;
 const POSITIONS = { 1: "GK", 2: "DEF", 3: "MID", 4: "FWD" };
 const POSITION_ORDER = { 1: 0, 2: 1, 3: 2, 4: 3 };
 const posColor = { GK: "#f59e0b", DEF: "#3b82f6", MID: "#10b981", FWD: "#ef4444" };
@@ -13,15 +14,14 @@ export default function Registry() {
   const [players, setPlayers] = useState([]);
   const [registry, setRegistry] = useState({});
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
   const [filterPos, setFilterPos] = useState("ALL");
   const [filterManager, setFilterManager] = useState("ALL");
   const [status, setStatus] = useState("");
+  const [showSpend, setShowSpend] = useState(false);
+  const [confirmReveal, setConfirmReveal] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   async function loadData() {
     setLoading(true);
@@ -60,7 +60,6 @@ export default function Registry() {
   }
 
   async function saveRegistry(newRegistry) {
-    setSaving(true);
     try {
       await fetch("/api/registry", {
         method: "POST",
@@ -72,15 +71,34 @@ export default function Registry() {
     } catch (err) {
       setStatus("Save failed: " + err.message);
     }
-    setSaving(false);
   }
 
-  function assignManager(playerId, manager) {
-    const newRegistry = { ...registry, [playerId]: manager || null };
-    if (!manager) delete newRegistry[playerId];
-    setRegistry(newRegistry);
-    saveRegistry(newRegistry);
+  function updatePlayer(playerId, field, value) {
+    const current = registry[playerId] || {};
+    const updated = { ...current, [field]: value };
+    if (!updated.manager && !updated.price) {
+      const newRegistry = { ...registry };
+      delete newRegistry[playerId];
+      setRegistry(newRegistry);
+      saveRegistry(newRegistry);
+    } else {
+      const newRegistry = { ...registry, [playerId]: updated };
+      setRegistry(newRegistry);
+      saveRegistry(newRegistry);
+    }
   }
+
+  // Calculate spend per manager
+  const managerStats = {};
+  MANAGERS.forEach(m => { managerStats[m] = { players: 0, spent: 0 }; });
+  Object.entries(registry).forEach(([id, data]) => {
+    if (data?.manager && managerStats[data.manager]) {
+      managerStats[data.manager].players++;
+      managerStats[data.manager].spent += parseFloat(data.price || 0);
+    }
+  });
+
+  const totalOwned = Object.values(registry).filter(d => d?.manager).length;
 
   const filtered = players.filter(p => {
     const matchesSearch = search === "" ||
@@ -89,17 +107,10 @@ export default function Registry() {
       p.team.toLowerCase().includes(search.toLowerCase());
     const matchesPos = filterPos === "ALL" || p.position === filterPos;
     const matchesManager = filterManager === "ALL" ||
-      (filterManager === "UNOWNED" && !registry[p.id]) ||
-      registry[p.id] === filterManager;
+      (filterManager === "UNOWNED" && !registry[p.id]?.manager) ||
+      registry[p.id]?.manager === filterManager;
     return matchesSearch && matchesPos && matchesManager;
   });
-
-  const managerCounts = {};
-  MANAGERS.forEach(m => { managerCounts[m] = 0; });
-  Object.values(registry).forEach(m => {
-    if (m && managerCounts[m] !== undefined) managerCounts[m]++;
-  });
-  const totalOwned = Object.values(registry).filter(Boolean).length;
 
   if (loading) return (
     <div style={{ minHeight: "100vh", background: "#0a0f0a", display: "flex", alignItems: "center", justifyContent: "center", color: "#4a8a4a", fontFamily: "Georgia, serif" }}>
@@ -112,21 +123,21 @@ export default function Registry() {
       {/* Header */}
       <div style={{ background: "linear-gradient(135deg, #1a3a1a, #0a1f0a)", borderBottom: "2px solid #2d5a2d", padding: "20px 24px", textAlign: "center" }}>
         <div style={{ fontSize: "11px", letterSpacing: "4px", color: "#4a8a4a", marginBottom: "6px", textTransform: "uppercase" }}>Fantasy League · Player Registry</div>
-        <h1 style={{ margin: 0, fontSize: "24px", fontWeight: "normal", color: "#c8e6c9" }}>2025/26 Season</h1>
+        <h1 style={{ margin: 0, fontSize: "24px", fontWeight: "normal", color: "#c8e6c9" }}>2025/26 Auction</h1>
         {status && <div style={{ marginTop: "8px", fontSize: "12px", color: "#66bb6a" }}>{status}</div>}
       </div>
 
       <div style={{ maxWidth: "900px", margin: "0 auto", padding: "16px" }}>
 
-        {/* Summary */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "8px", marginBottom: "16px" }}>
+        {/* Summary stats */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", marginBottom: "16px" }}>
           <div style={{ background: "#111a11", border: "1px solid #2d5a2d", borderRadius: "6px", padding: "10px", textAlign: "center" }}>
             <div style={{ fontSize: "22px", color: "#c8e6c9" }}>{players.length}</div>
             <div style={{ fontSize: "10px", color: "#4a8a4a", textTransform: "uppercase", letterSpacing: "1px" }}>Total Players</div>
           </div>
           <div style={{ background: "#111a11", border: "1px solid #2d5a2d", borderRadius: "6px", padding: "10px", textAlign: "center" }}>
             <div style={{ fontSize: "22px", color: "#81c784" }}>{totalOwned}</div>
-            <div style={{ fontSize: "10px", color: "#4a8a4a", textTransform: "uppercase", letterSpacing: "1px" }}>Owned</div>
+            <div style={{ fontSize: "10px", color: "#4a8a4a", textTransform: "uppercase", letterSpacing: "1px" }}>Sold</div>
           </div>
           <div style={{ background: "#111a11", border: "1px solid #2d5a2d", borderRadius: "6px", padding: "10px", textAlign: "center" }}>
             <div style={{ fontSize: "22px", color: "#ef9a9a" }}>{players.length - totalOwned}</div>
@@ -134,15 +145,66 @@ export default function Registry() {
           </div>
         </div>
 
-        {/* Manager counts */}
+        {/* Manager spend panel */}
         <div style={{ background: "#111a11", border: "1px solid #2d5a2d", borderRadius: "6px", padding: "12px", marginBottom: "16px" }}>
-          <div style={{ fontSize: "10px", color: "#4a8a4a", textTransform: "uppercase", letterSpacing: "2px", marginBottom: "8px" }}>Squad Sizes</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            {MANAGERS.map(m => (
-              <div key={m} style={{ background: "#0d150d", borderRadius: "4px", padding: "4px 10px", fontSize: "12px", color: "#c8e6c9" }}>
-                {m} <span style={{ color: "#66bb6a" }}>{managerCounts[m]}</span>
-              </div>
-            ))}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+            <div style={{ fontSize: "10px", color: "#4a8a4a", textTransform: "uppercase", letterSpacing: "2px" }}>Manager Budgets</div>
+            {!showSpend ? (
+              !confirmReveal ? (
+                <button onClick={() => setConfirmReveal(true)} style={{
+                  background: "#1a2a1a", border: "1px solid #3a5a3a", borderRadius: "4px",
+                  color: "#66bb6a", fontSize: "11px", padding: "4px 10px", cursor: "pointer"
+                }}>Reveal Spend</button>
+              ) : (
+                <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                  <span style={{ fontSize: "11px", color: "#f59e0b" }}>Reveal to everyone?</span>
+                  <button onClick={() => { setShowSpend(true); setConfirmReveal(false); }} style={{
+                    background: "#3a1a1a", border: "1px solid #8a4a4a", borderRadius: "4px",
+                    color: "#ef9a9a", fontSize: "11px", padding: "4px 10px", cursor: "pointer"
+                  }}>Yes, reveal</button>
+                  <button onClick={() => setConfirmReveal(false)} style={{
+                    background: "#1a2a1a", border: "1px solid #3a5a3a", borderRadius: "4px",
+                    color: "#66bb6a", fontSize: "11px", padding: "4px 10px", cursor: "pointer"
+                  }}>Cancel</button>
+                </div>
+              )
+            ) : (
+              <button onClick={() => setShowSpend(false)} style={{
+                background: "#1a2a1a", border: "1px solid #3a5a3a", borderRadius: "4px",
+                color: "#66bb6a", fontSize: "11px", padding: "4px 10px", cursor: "pointer"
+              }}>Hide Spend</button>
+            )}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "6px" }}>
+            {MANAGERS.map(m => {
+              const stats = managerStats[m];
+              const remaining = BUDGET - stats.spent;
+              const overspent = remaining < 0;
+              return (
+                <div key={m} style={{
+                  background: "#0d150d",
+                  border: `1px solid ${overspent && showSpend ? "#8a2a2a" : "#1e3a1e"}`,
+                  borderRadius: "4px", padding: "8px 10px"
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ color: "#c8e6c9", fontSize: "13px", fontWeight: "bold" }}>{m}</span>
+                    <span style={{ color: "#4a8a4a", fontSize: "10px" }}>{stats.players} players</span>
+                  </div>
+                  {showSpend ? (
+                    <div style={{ marginTop: "4px" }}>
+                      <div style={{ fontSize: "11px", color: "#81c784" }}>Spent: £{stats.spent.toFixed(2)}m</div>
+                      <div style={{ fontSize: "11px", color: overspent ? "#ef9a9a" : "#66bb6a" }}>
+                        {overspent ? `⚠ Overspent by £${Math.abs(remaining).toFixed(2)}m` : `Remaining: £${remaining.toFixed(2)}m`}
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ marginTop: "4px", fontSize: "11px", color: "#2d4a2d" }}>
+                      ••••••••
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -171,46 +233,69 @@ export default function Registry() {
           </select>
         </div>
 
-        {/* Player count */}
         <div style={{ fontSize: "11px", color: "#4a8a4a", marginBottom: "8px" }}>
           Showing {filtered.length} of {players.length} players
         </div>
 
         {/* Player list */}
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-          {filtered.map(p => (
-            <div key={p.id} style={{
-              background: "#111a11",
-              border: `1px solid ${registry[p.id] ? "#2d5a2d" : "#1a2a1a"}`,
-              borderRadius: "6px", padding: "8px 12px",
-              display: "flex", alignItems: "center", gap: "10px"
-            }}>
-              <div style={{
-                width: "30px", height: "30px", borderRadius: "4px", flexShrink: 0,
-                background: posColor[p.position] + "22", border: `1px solid ${posColor[p.position]}44`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "9px", fontWeight: "bold", color: posColor[p.position],
-              }}>{p.position}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ color: "#c8e6c9", fontSize: "13px" }}>{p.name}</div>
-                <div style={{ color: "#4a8a4a", fontSize: "10px" }}>{p.team}</div>
+          {filtered.map(p => {
+            const entry = registry[p.id] || {};
+            return (
+              <div key={p.id} style={{
+                background: "#111a11",
+                border: `1px solid ${entry.manager ? "#2d5a2d" : "#1a2a1a"}`,
+                borderRadius: "6px", padding: "8px 12px",
+                display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap"
+              }}>
+                <div style={{
+                  width: "30px", height: "30px", borderRadius: "4px", flexShrink: 0,
+                  background: posColor[p.position] + "22", border: `1px solid ${posColor[p.position]}44`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "9px", fontWeight: "bold", color: posColor[p.position],
+                }}>{p.position}</div>
+
+                <div style={{ flex: 1, minWidth: "120px" }}>
+                  <div style={{ color: "#c8e6c9", fontSize: "13px" }}>{p.name}</div>
+                  <div style={{ color: "#4a8a4a", fontSize: "10px" }}>{p.team}</div>
+                </div>
+
+                <select
+                  value={entry.manager || ""}
+                  onChange={e => updatePlayer(p.id, "manager", e.target.value)}
+                  style={{
+                    background: entry.manager ? "#1a3a1a" : "#0d150d",
+                    border: `1px solid ${entry.manager ? "#4a8a4a" : "#2d3a2d"}`,
+                    borderRadius: "4px", padding: "4px 8px",
+                    color: entry.manager ? "#81c784" : "#4a6a4a",
+                    fontSize: "12px", cursor: "pointer"
+                  }}>
+                  <option value="">— Unowned —</option>
+                  {MANAGERS.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                  <span style={{ fontSize: "11px", color: "#4a8a4a" }}>£</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.05"
+                    placeholder="0.00"
+                    value={entry.price || ""}
+                    onChange={e => updatePlayer(p.id, "price", e.target.value)}
+                    style={{
+                      width: "70px", background: "#0d150d",
+                      border: `1px solid ${entry.price ? "#4a8a4a" : "#2d3a2d"}`,
+                      borderRadius: "4px", padding: "4px 6px",
+                      color: entry.price ? "#81c784" : "#4a6a4a",
+                      fontSize: "12px", outline: "none"
+                    }}
+                  />
+                  <span style={{ fontSize: "11px", color: "#4a8a4a" }}>m</span>
+                </div>
               </div>
-              <div style={{ fontSize: "10px", color: "#3a5a3a", flexShrink: 0 }}>#{p.id}</div>
-              <select
-                value={registry[p.id] || ""}
-                onChange={e => assignManager(p.id, e.target.value)}
-                style={{
-                  background: registry[p.id] ? "#1a3a1a" : "#0d150d",
-                  border: `1px solid ${registry[p.id] ? "#4a8a4a" : "#2d3a2d"}`,
-                  borderRadius: "4px", padding: "4px 8px",
-                  color: registry[p.id] ? "#81c784" : "#4a6a4a",
-                  fontSize: "12px", flexShrink: 0, cursor: "pointer"
-                }}>
-                <option value="">— Unowned —</option>
-                {MANAGERS.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
