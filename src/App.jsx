@@ -16,17 +16,17 @@ const TEAMS = [
     gameweek: 38,
     formation: "3-4-3",
     players: [
-      { name: "Donnarumma", club: "Man City",     position: "GK",  isCaptain: false, fplId: 736 },
-      { name: "Hincapie",   club: "Arsenal",      position: "DEF", isCaptain: false, fplId: 725 },
-      { name: "Mukiele",    club: "Sunderland",   position: "DEF", isCaptain: false, fplId: 694 },
-      { name: "Akinmboni",  club: "Bournemouth",  position: "DEF", isCaptain: false, fplId: 75  },
-      { name: "Summerville",club: "West Ham",     position: "MID", isCaptain: false, fplId: 615 },
-      { name: "Buendia",    club: "Aston Villa",  position: "MID", isCaptain: false, fplId: 50  },
-      { name: "Anderson",   club: "Notts Forest", position: "MID", isCaptain: false, fplId: 517 },
-      { name: "Anthony",    club: "Burnley",      position: "MID", isCaptain: false, fplId: 200 },
-      { name: "Fleming",    club: "Burnley",      position: "FWD", isCaptain: false, fplId: 215 },
-      { name: "Woltemade",  club: "Newcastle",    position: "FWD", isCaptain: false, fplId: 714 },
-      { name: "Kroupi",     club: "Bournemouth",  position: "FWD", isCaptain: true,  fplId: 100 },
+      { name: "Donnarumma", club: "Man City",     position: "GK",  isCaptain: false, fplId: 736, teamId: 13 },
+      { name: "Hincapie",   club: "Arsenal",      position: "DEF", isCaptain: false, fplId: 725, teamId: 1  },
+      { name: "Mukiele",    club: "Sunderland",   position: "DEF", isCaptain: false, fplId: 694, teamId: 17 },
+      { name: "Akinmboni",  club: "Bournemouth",  position: "DEF", isCaptain: false, fplId: 75,  teamId: 4  },
+      { name: "Summerville",club: "West Ham",     position: "MID", isCaptain: false, fplId: 615, teamId: 19 },
+      { name: "Buendia",    club: "Aston Villa",  position: "MID", isCaptain: false, fplId: 50,  teamId: 2  },
+      { name: "Anderson",   club: "Notts Forest", position: "MID", isCaptain: false, fplId: 517, teamId: 16 },
+      { name: "Anthony",    club: "Burnley",      position: "MID", isCaptain: false, fplId: 200, teamId: 3  },
+      { name: "Fleming",    club: "Burnley",      position: "FWD", isCaptain: false, fplId: 215, teamId: 3  },
+      { name: "Woltemade",  club: "Newcastle",    position: "FWD", isCaptain: false, fplId: 714, teamId: 15 },
+      { name: "Kroupi",     club: "Bournemouth",  position: "FWD", isCaptain: true,  fplId: 100, teamId: 4  },
     ],
   },
   {
@@ -35,30 +35,47 @@ const TEAMS = [
     gameweek: 38,
     formation: "3-5-2",
     players: [
-      { name: "Becker",       club: "Liverpool",       position: "GK",  isCaptain: false, fplId: 366 },
-      { name: "Aké",          club: "Man City",        position: "DEF", isCaptain: false, fplId: 405 },
-      { name: "Aït-Nouri",    club: "Man City",        position: "DEF", isCaptain: false, fplId: 402 },
-      { name: "Nunes",        club: "Man City",        position: "DEF", isCaptain: false, fplId: 407 },
-      { name: "Mainoo",       club: "Man Utd",         position: "MID", isCaptain: false, fplId: 458 },
-      { name: "Sarr",         club: "Crystal Palace",  position: "MID", isCaptain: false, fplId: 267 },
-      { name: "Fernandez",    club: "Chelsea",         position: "MID", isCaptain: false, fplId: 237 },
-      { name: "Silva",        club: "Man City",        position: "MID", isCaptain: false, fplId: 416 },
-      { name: "Gravenberch",  club: "Liverpool",       position: "MID", isCaptain: false, fplId: 390 },
-      { name: "Thiago",       club: "Brentford",       position: "FWD", isCaptain: false, fplId: 136 },
-      { name: "Bowen",        club: "West Ham",        position: "FWD", isCaptain: true,  fplId: 624 },
+      { name: "Becker",      club: "Liverpool",      position: "GK",  isCaptain: false, fplId: 366, teamId: 12 },
+      { name: "Aké",         club: "Man City",       position: "DEF", isCaptain: false, fplId: 405, teamId: 13 },
+      { name: "Aït-Nouri",   club: "Man City",       position: "DEF", isCaptain: false, fplId: 402, teamId: 13 },
+      { name: "Nunes",       club: "Man City",       position: "DEF", isCaptain: false, fplId: 407, teamId: 13 },
+      { name: "Mainoo",      club: "Man Utd",        position: "MID", isCaptain: false, fplId: 458, teamId: 14 },
+      { name: "Sarr",        club: "Crystal Palace", position: "MID", isCaptain: false, fplId: 267, teamId: 8  },
+      { name: "Fernandez",   club: "Chelsea",        position: "MID", isCaptain: false, fplId: 237, teamId: 7  },
+      { name: "Silva",       club: "Man City",       position: "MID", isCaptain: false, fplId: 416, teamId: 13 },
+      { name: "Gravenberch", club: "Liverpool",      position: "MID", isCaptain: false, fplId: 390, teamId: 12 },
+      { name: "Thiago",      club: "Brentford",      position: "FWD", isCaptain: false, fplId: 136, teamId: 5  },
+      { name: "Bowen",       club: "West Ham",       position: "FWD", isCaptain: true,  fplId: 624, teamId: 19 },
     ],
   },
 ];
 
-function scorePlayer(stats, position, isCaptain) {
+function buildTeamConcededMap(fixtures) {
+  const map = {};
+  fixtures.forEach(f => {
+    map[f.team_h] = f.team_a_score;
+    map[f.team_a] = f.team_h_score;
+  });
+  return map;
+}
+
+function scorePlayer(stats, position, isCaptain, teamId, teamConcededMap) {
   if (!stats || !stats.played) {
     return { points: 0, breakdown: ["Did not play — scored 0"], notPlayed: true };
   }
   const rules = SCORING_RULES[position];
   let points = 0;
   const breakdown = [];
-  const { goals_scored: goals = 0, assists = 0, clean_sheets: cleanSheet = 0,
-          goals_conceded: conceded = 0, own_goals: ownGoals = 0, red_cards: redCards = 0, minutes = 0 } = stats;
+
+  const { goals_scored: goals = 0, assists = 0, own_goals: ownGoals = 0,
+          red_cards: redCards = 0, minutes = 0 } = stats;
+
+  // For GK/DEF use full match goals conceded from fixture result
+  const isDefensive = position === "GK" || position === "DEF";
+  const goalsConceded = isDefensive
+    ? (teamConcededMap[teamId] ?? stats.goals_conceded ?? 0)
+    : 0;
+  const cleanSheet = isDefensive && goalsConceded === 0 ? 1 : 0;
 
   if (goals > 0) {
     const p = goals * rules.goal;
@@ -78,10 +95,10 @@ function scorePlayer(stats, position, isCaptain) {
     points += rules.cleanSheet;
     breakdown.push(`Clean sheet = +${rules.cleanSheet}pts`);
   }
-  if (conceded > 0 && rules.concede !== 0) {
-    const p = conceded * rules.concede;
+  if (goalsConceded > 0 && rules.concede !== 0) {
+    const p = goalsConceded * rules.concede;
     points += p;
-    breakdown.push(`${conceded} goal${conceded > 1 ? "s" : ""} conceded × ${rules.concede} = ${p}pts`);
+    breakdown.push(`${goalsConceded} goal${goalsConceded > 1 ? "s" : ""} conceded × ${rules.concede} = ${p}pts (full match)`);
   }
   if (ownGoals > 0) {
     const p = ownGoals * rules.ownGoal;
@@ -105,13 +122,13 @@ function scorePlayer(stats, position, isCaptain) {
 
 const posColor = { GK: "#f59e0b", DEF: "#3b82f6", MID: "#10b981", FWD: "#ef4444" };
 
-function TeamScorer({ team, gwStats }) {
+function TeamScorer({ team, gwStats, teamConcededMap }) {
   const [expanded, setExpanded] = useState({});
   const toggle = (i) => setExpanded(prev => ({ ...prev, [i]: !prev[i] }));
 
   const scored = team.players.map(p => {
     const stats = gwStats[p.fplId] || null;
-    const { points, breakdown, notPlayed } = scorePlayer(stats, p.position, p.isCaptain);
+    const { points, breakdown, notPlayed } = scorePlayer(stats, p.position, p.isCaptain, p.teamId, teamConcededMap);
     return { ...p, stats, points, breakdown, notPlayed };
   });
   const total = scored.reduce((sum, p) => sum + p.points, 0);
@@ -176,7 +193,7 @@ function TeamScorer({ team, gwStats }) {
             {expanded[i] && (
               <div style={{ borderTop: "1px solid #1e3a1e", padding: "10px 14px", background: "#0d150d" }}>
                 {p.stats && <div style={{ fontSize: "10px", color: "#4a8a4a", marginBottom: "6px" }}>
-                  {p.stats.minutes}' · {p.stats.goals_scored}G · {p.stats.assists}A · {p.stats.clean_sheets}CS · {p.stats.goals_conceded} conceded
+                  {p.stats.minutes}' · {p.stats.goals_scored}G · {p.stats.assists}A
                 </div>}
                 {p.breakdown.map((line, j) => (
                   <div key={j} style={{ fontSize: "11px", color: "#81c784", padding: "2px 0", borderBottom: j < p.breakdown.length - 1 ? "1px solid #1a2a1a" : "none" }}>
@@ -194,6 +211,7 @@ function TeamScorer({ team, gwStats }) {
 
 export default function App() {
   const [gwStats, setGwStats] = useState(null);
+  const [teamConcededMap, setTeamConcededMap] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [status, setStatus] = useState("");
@@ -203,12 +221,23 @@ export default function App() {
     setError(null);
     try {
       setStatus("Fetching GW38 stats from FPL...");
-      const res = await fetch(`${PROXY_URL}?endpoint=event/38/live`);
-      if (!res.ok) throw new Error(`Proxy error: ${res.status}`);
-      const data = await res.json();
+      const [liveRes, fixtureRes] = await Promise.all([
+        fetch(`${PROXY_URL}?endpoint=event/38/live`),
+        fetch(`${PROXY_URL}?endpoint=fixtures/?event=38`),
+      ]);
+      if (!liveRes.ok) throw new Error(`Live data error: ${liveRes.status}`);
+      if (!fixtureRes.ok) throw new Error(`Fixture data error: ${fixtureRes.status}`);
+
+      const liveData = await liveRes.json();
+      const fixtureData = await fixtureRes.json();
+
       const statsById = {};
-      data.elements.forEach(el => { statsById[el.id] = el.stats; });
+      liveData.elements.forEach(el => { statsById[el.id] = el.stats; });
+
+      const concededMap = buildTeamConcededMap(fixtureData);
+
       setGwStats(statsById);
+      setTeamConcededMap(concededMap);
       setStatus("");
     } catch (err) {
       setError(err.message);
@@ -249,12 +278,12 @@ export default function App() {
           </div>
         )}
 
-        {gwStats && (
+        {gwStats && teamConcededMap && (
           <>
             {TEAMS.map((team, i) => (
-              <TeamScorer key={i} team={team} gwStats={gwStats} />
+              <TeamScorer key={i} team={team} gwStats={gwStats} teamConcededMap={teamConcededMap} />
             ))}
-            <button onClick={() => setGwStats(null)} style={{
+            <button onClick={() => { setGwStats(null); setTeamConcededMap(null); }} style={{
               width: "100%", padding: "12px", background: "transparent",
               border: "1px solid #2d5a2d", borderRadius: "6px", color: "#4a8a4a",
               fontSize: "12px", letterSpacing: "2px", textTransform: "uppercase", cursor: "pointer",
