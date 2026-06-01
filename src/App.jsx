@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Registry from "./Registry";
+import { darkTheme, lightTheme } from "./theme";
 
 const PROXY_URL = "/api/fpl";
 
@@ -212,6 +213,8 @@ function TeamScorer({ team, gwStats, teamConcededMap }) {
 
 export default function App() {
   const [page, setPage] = useState("scoring");
+  const [darkMode, setDarkMode] = useState(true);
+  const theme = darkMode ? darkTheme : lightTheme;
   const [gwStats, setGwStats] = useState(null);
   const [teamConcededMap, setTeamConcededMap] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -248,25 +251,39 @@ export default function App() {
     setLoading(false);
   }
 
-  const nav = (
-    <div style={{ display: "flex", justifyContent: "center", gap: "8px", padding: "12px 16px", background: "#0d150d", borderBottom: "1px solid #1a3a1a" }}>
+const nav = (
+  <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "8px", padding: "12px 16px", background: theme.bgCard, borderBottom: `1px solid ${theme.border}`, position: "relative" }}>
+    <div style={{ display: "flex", gap: "8px" }}>
       {["scoring", "registry"].map(p => (
         <button key={p} onClick={() => setPage(p)} style={{
           padding: "6px 20px",
-          background: page === p ? "linear-gradient(135deg, #2d5a2d, #1a4a1a)" : "transparent",
-          border: `1px solid ${page === p ? "#4a8a4a" : "#2d3a2d"}`,
-          borderRadius: "4px", color: page === p ? "#c8e6c9" : "#4a8a4a",
+          background: page === p ? theme.buttonBg : "transparent",
+          border: `1px solid ${page === p ? theme.borderActive : theme.borderSubtle}`,
+          borderRadius: "4px", color: page === p ? theme.text : theme.textMuted,
           fontSize: "11px", letterSpacing: "2px", textTransform: "uppercase", cursor: "pointer"
         }}>{p}</button>
       ))}
     </div>
-  );
+    <button
+      onClick={() => setDarkMode(d => !d)}
+      style={{
+        position: "absolute", right: "16px",
+        background: "transparent",
+        border: `1px solid ${theme.borderSubtle}`,
+        borderRadius: "4px", padding: "4px 10px",
+        color: theme.textMuted, fontSize: "11px",
+        cursor: "pointer", letterSpacing: "1px"
+      }}>
+      {darkMode ? "☀ Light" : "☾ Dark"}
+    </button>
+  </div>
+);
 
-  if (page === "registry") return <><div>{nav}</div><Registry /></>;
+  if (page === "registry") return <><div>{nav}</div><Registry theme={theme} /></>;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0a0f0a", color: "#e8f5e9", fontFamily: "'Georgia', serif" }}>
-      <div style={{ background: "linear-gradient(135deg, #1a3a1a, #0a1f0a)", borderBottom: "2px solid #2d5a2d", padding: "28px 24px 20px", textAlign: "center" }}>
+    <div style={{ minHeight: "100vh", background: theme.bg, color: theme.text, fontFamily: "'Georgia', serif" }}>
+      <div style={{ background: theme.bgHeader, borderBottom: `2px solid ${theme.border}`, padding: "28px 24px 20px", textAlign: "center" }}>
         <div style={{ fontSize: "11px", letterSpacing: "4px", color: "#4a8a4a", marginBottom: "6px", textTransform: "uppercase" }}>Fantasy League · GW38 Scoring</div>
         <h1 style={{ margin: 0, fontSize: "26px", fontWeight: "normal", color: "#c8e6c9" }}>2025/26 Season</h1>
       </div>
