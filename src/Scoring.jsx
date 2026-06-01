@@ -123,10 +123,13 @@ function findPlayer(playerName, club, allPlayers, teams, positionHint, managerNa
     const THRESHOLD = 3;
     let bestDistance = THRESHOLD + 1;
     let fuzzyMatches = [];
-    for (const p of pool) {
+      for (const p of pool) {
+      const secondParts = p.second_name.split(' ').map(normalise);
+      const secondDist = Math.min(...secondParts.map(part => levenshtein(normName, part)));
       const dist = Math.min(
         levenshtein(normName, normalise(p.web_name)),
-        levenshtein(normName, normalise(p.second_name))
+        levenshtein(normName, normalise(p.second_name)),
+        secondDist
       );
       if (dist < bestDistance) { bestDistance = dist; fuzzyMatches = [p]; }
       else if (dist === bestDistance) fuzzyMatches.push(p);
