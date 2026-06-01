@@ -11,11 +11,7 @@ export default async function handler(req, res) {
   }
 
   if (!UPSTASH_URL || !UPSTASH_TOKEN) {
-    return res.status(500).json({ 
-      error: 'Missing environment variables',
-      hasUrl: !!UPSTASH_URL,
-      hasToken: !!UPSTASH_TOKEN
-    });
+    return res.status(500).json({ error: 'Missing environment variables' });
   }
 
   try {
@@ -23,25 +19,20 @@ export default async function handler(req, res) {
       const response = await fetch(`${UPSTASH_URL}/get/registry`, {
         headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
       });
-      const text = await response.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        return res.status(500).json({ error: 'Upstash parse error', raw: text.substring(0, 200) });
-      }
-      return res.status(200).json(data.result ? JSON.parse(data.result) : {});
+      const data = await response.json();
+      if (!data.result) return res.status(200).json({});
+      return res.status(200).json(JSON.parse(data.result));
     }
 
     if (req.method === 'POST') {
-      const body = JSON.stringify(req.body);
+      const body = req.body;
       const response = await fetch(`${UPSTASH_URL}/set/registry`, {
         method: 'POST',
-        headers: { 
+        headers: {
           Authorization: `Bearer ${UPSTASH_TOKEN}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(["registry", body]),
+        body: JSON.stringify(["registry", JSON.stringify(body)]),
       });
       const data = await response.json();
       return res.status(200).json({ ok: true, result: data });
@@ -50,6 +41,6 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
 
   } catch (err) {
-    return res.status(500).json({ error: err.message, stack: err.stack });
+    return res.status(500).json({ error: err.message });
   }
 }
