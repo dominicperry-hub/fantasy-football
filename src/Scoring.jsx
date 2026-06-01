@@ -58,7 +58,7 @@ function parseTeam(raw) {
 
   // Remaining lines: players
   const players = [];
-  const playerLineRegex = /^(.+?)\s*-\s*(.+?)(\s*\(c\))?$/i;
+  const playerLineRegex = /^(.+?)\s*-+\s*(.+?)(\s*\(c\))?$/i;
 
   for (const line of lines) {
     if (line.match(/game\s*week/i) || line.match(/^gw\s*\d+/i)) continue;
