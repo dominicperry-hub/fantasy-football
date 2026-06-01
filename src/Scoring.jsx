@@ -17,6 +17,26 @@ function normalise(str) {
     .replace(/[^a-z0-9]/g, "");
 }
 
+// Work out position groups from formation string e.g. "3-5-2"
+function getPositionGroups(formation) {
+  if (!formation) return null;
+  const parts = formation.match(/(\d+)-(\d+)-(\d+)/);
+  if (!parts) return null;
+  const def = parseInt(parts[1]);
+  const mid = parseInt(parts[2]);
+  const fwd = parseInt(parts[3]);
+  return { GK: 1, DEF: def, MID: mid, FWD: fwd };
+}
+
+// Assign a position label to a player based on their index in the player list
+function getPlayerPositionFromIndex(index, groups) {
+  if (!groups) return null;
+  if (index === 0) return "GK";
+  if (index <= groups.DEF) return "DEF";
+  if (index <= groups.DEF + groups.MID) return "MID";
+  return "FWD";
+}
+
 // Parse a raw WhatsApp team submission
 function parseTeam(raw) {
   const lines = raw.split("\n").map(l => l.trim()).filter(l => l.length > 0);
@@ -72,7 +92,7 @@ function levenshtein(a, b) {
   return dp[a.length][b.length];
 }
 
-function findPlayer(playerName, club, allPlayers, teams) {
+function findPlayer(playerName, club, allPlayers, teams, positionHint, managerName, registry) {
   const normName = normalise(playerName);
   const normClub = normalise(club);
 
@@ -86,47 +106,69 @@ function findPlayer(playerName, club, allPlayers, teams) {
     ? allPlayers.filter(p => p.team === teamId)
     : allPlayers;
 
-  const exact = candidates.find(p => normalise(p.web_name) === normName);
-  if (exact) return exact;
+  // Get all name matches first
+  function getMatches(pool) {
+    const exact = pool.filter(p => normalise(p.web_name) === normName || normalise(p.second_name) === normName);
+    if (exact.length > 0) return exact;
 
-  const secondExact = candidates.find(p => normalise(p.second_name) === normName);
-  if (secondExact) return secondExact;
+    const partial = pool.filter(p =>
+      normalise(p.web_name).includes(normName) ||
+      normName.includes(normalise(p.web_name)) ||
+      normalise(p.second_name).includes(normName) ||
+      normName.includes(normalise(p.second_name))
+    );
+    if (partial.length > 0) return partial;
 
-  const partial = candidates.find(p =>
-    normalise(p.web_name).includes(normName) ||
-    normName.includes(normalise(p.web_name)) ||
-    normalise(p.second_name).includes(normName) ||
-    normName.includes(normalise(p.second_name))
-  );
-  if (partial) return partial;
+    // Fuzzy
+    const THRESHOLD = 3;
+    let bestDistance = THRESHOLD + 1;
+    let fuzzyMatches = [];
+    for (const p of pool) {
+      const dist = Math.min(
+        levenshtein(normName, normalise(p.web_name)),
+        levenshtein(normName, normalise(p.second_name))
+      );
+      if (dist < bestDistance) { bestDistance = dist; fuzzyMatches = [p]; }
+      else if (dist === bestDistance) fuzzyMatches.push(p);
+    }
+    return fuzzyMatches;
+  }
 
-  const THRESHOLD = 3;
-  let bestMatch = null;
-  let bestDistance = THRESHOLD + 1;
+  let matches = getMatches(candidates);
+  if (matches.length === 0 && teamId) matches = getMatches(allPlayers);
+  if (matches.length === 0) return null;
+  if (matches.length === 1) return matches[0];
 
-  for (const p of candidates) {
-    const webDist = levenshtein(normName, normalise(p.web_name));
-    const secondDist = levenshtein(normName, normalise(p.second_name));
-    const dist = Math.min(webDist, secondDist);
-    if (dist < bestDistance) {
-      bestDistance = dist;
-      bestMatch = p;
+  // Multiple matches — disambiguate
+
+  // 1. Registry ownership — prefer player owned by this manager
+  if (managerName && registry) {
+    const FPL_POS = { 1: "GK", 2: "DEF", 3: "MID", 4: "FWD" };
+    const owned = matches.filter(p =>
+      Object.entries(registry).some(([id, entry]) =>
+        parseInt(id) === p.id && entry?.manager === managerName && entry?.status === "sold"
+      )
+    );
+    if (owned.length === 1) return owned[0];
+
+    // 2. Position hint from formation
+    if (positionHint) {
+      const posMatch = owned.length > 0
+        ? owned.filter(p => FPL_POS[p.element_type] === positionHint)
+        : matches.filter(p => FPL_POS[p.element_type] === positionHint);
+      if (posMatch.length === 1) return posMatch[0];
     }
   }
 
-  if (bestMatch) return bestMatch;
-
-  if (teamId) {
-    const fallback = allPlayers.find(p =>
-      normalise(p.web_name) === normName ||
-      normalise(p.second_name) === normName ||
-      normalise(p.web_name).includes(normName) ||
-      normName.includes(normalise(p.web_name))
-    );
-    if (fallback) return fallback;
+  // 3. Position hint without registry
+  if (positionHint) {
+    const FPL_POS = { 1: "GK", 2: "DEF", 3: "MID", 4: "FWD" };
+    const posMatch = matches.filter(p => FPL_POS[p.element_type] === positionHint);
+    if (posMatch.length === 1) return posMatch[0];
   }
 
-  return null;
+  // Fall back to first match
+  return matches[0];
 }
 
 function buildTeamConcededMap(fixtures) {
@@ -278,8 +320,10 @@ export default function Scoring({ theme }) {
       const teamConcededMap = buildTeamConcededMap(fixtureData);
 
       // Score each player
-      const scoredPlayers = parsed.players.map(p => {
-        const fplPlayer = findPlayer(p.name, p.club, fplData.elements, fplData.teams);
+      const posGroups = getPositionGroups(parsed.formation);
+      const scoredPlayers = parsed.players.map((p, idx) => {
+        const positionHint = getPlayerPositionFromIndex(idx, posGroups);
+        const fplPlayer = findPlayer(p.name, p.club, fplData.elements, fplData.teams, positionHint, parsed.managerName, registry);
         const fplTeam = fplPlayer ? fplData.teams.find(t => t.id === fplPlayer.team) : null;
         const position = fplPlayer ? FPL_POSITIONS[fplPlayer.element_type] : "MID";
         const stats = fplPlayer ? statsById[fplPlayer.id] : null;
