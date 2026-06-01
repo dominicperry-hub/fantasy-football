@@ -1,6 +1,19 @@
 const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 
+async function upstash(command, ...args) {
+  const response = await fetch(`${UPSTASH_URL}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${UPSTASH_TOKEN}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify([command, ...args]),
+  });
+  const data = await response.json();
+  return data.result;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -16,26 +29,15 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      const response = await fetch(`${UPSTASH_URL}/get/registry`, {
-        headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
-      });
-      const data = await response.json();
-      if (!data.result) return res.status(200).json({});
-      return res.status(200).json(JSON.parse(data.result));
+      const result = await upstash('GET', 'registry');
+      if (!result) return res.status(200).json({});
+      return res.status(200).json(JSON.parse(result));
     }
 
     if (req.method === 'POST') {
-      const body = req.body;
-      const response = await fetch(`${UPSTASH_URL}/set/registry`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${UPSTASH_TOKEN}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(["registry", JSON.stringify(body)]),
-      });
-      const data = await response.json();
-      return res.status(200).json({ ok: true, result: data });
+      const value = JSON.stringify(req.body);
+      await upstash('SET', 'registry', value);
+      return res.status(200).json({ ok: true });
     }
 
     return res.status(405).json({ error: 'Method not allowed' });
