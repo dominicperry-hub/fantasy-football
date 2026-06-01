@@ -17,74 +17,6 @@ function normalise(str) {
     .replace(/[^a-z0-9]/g, "");
 }
 
-function levenshtein(a, b) {
-  const dp = Array.from({ length: a.length + 1 }, (_, i) =>
-    Array.from({ length: b.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
-  );
-  for (let i = 1; i <= a.length; i++) {
-    for (let j = 1; j <= b.length; j++) {
-      dp[i][j] = a[i-1] === b[j-1]
-        ? dp[i-1][j-1]
-        : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
-    }
-  }
-  return dp[a.length][b.length];
-}
-
-function findPlayer(playerName, club, allPlayers, teams) {
-  const normName = normalise(playerName);
-  const normClub = normalise(club);
-
-  const team = teams.find(t =>
-    normalise(t.name).includes(normClub) ||
-    normClub.includes(normalise(t.name))
-  );
-  const teamId = team?.id;
-
-  const candidates = teamId
-    ? allPlayers.filter(p => p.team === teamId)
-    : allPlayers;
-
-  // Exact web_name match
-  const exact = candidates.find(p => normalise(p.web_name) === normName);
-  if (exact) return exact;
-
-  // Exact second_name match
-  const secondExact = candidates.find(p => normalise(p.second_name) === normName);
-  if (secondExact) return secondExact;
-
-  // Partial match
-  const partial = candidates.find(p =>
-    normalise(p.web_name).includes(normName) ||
-    normName.includes(normalise(p.web_name)) ||
-    normalise(p.second_name).includes(normName) ||
-    normName.includes(normalise(p.second_name))
-  );
-  if (partial) return partial;
-
-  // Fuzzy match using Levenshtein — threshold of 3 changes
-  const THRESHOLD = 3;
-  let bestMatch = null;
-  let bestDistance = THRESHOLD + 1;
-
-  for (const p of candidates) {
-    const webDist = levenshtein(normName, normalise(p.web_name));
-    const secondDist = levenshtein(normName, normalise(p.second_name));
-    const dist = Math.min(webDist, secondDist);
-    if (dist < bestDistance) {
-      bestDistance = dist;
-      bestMatch = p;
-    }
-  }
-
-  if (bestMatch) return bestMatch;
-
-  // Last resort — fuzzy match across all players if team not found
-  if (teamId) return findPlayer(playerName, "", allPlayers, teams);
-
-  return null;
-}
-
 // Parse a raw WhatsApp team submission
 function parseTeam(raw) {
   const lines = raw.split("\n").map(l => l.trim()).filter(l => l.length > 0);
@@ -126,13 +58,6 @@ function parseTeam(raw) {
   return { managerName, gameweek, teamName, formation, players, raw };
 }
 
-// Find a player in the FPL bootstrap by name + club
-function normalise(str) {
-  return str.toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]/g, "");
-}
-
 function levenshtein(a, b) {
   const dp = Array.from({ length: a.length + 1 }, (_, i) =>
     Array.from({ length: b.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
@@ -161,15 +86,12 @@ function findPlayer(playerName, club, allPlayers, teams) {
     ? allPlayers.filter(p => p.team === teamId)
     : allPlayers;
 
-  // Exact web_name match
   const exact = candidates.find(p => normalise(p.web_name) === normName);
   if (exact) return exact;
 
-  // Exact second_name match
   const secondExact = candidates.find(p => normalise(p.second_name) === normName);
   if (secondExact) return secondExact;
 
-  // Partial match
   const partial = candidates.find(p =>
     normalise(p.web_name).includes(normName) ||
     normName.includes(normalise(p.web_name)) ||
@@ -178,7 +100,6 @@ function findPlayer(playerName, club, allPlayers, teams) {
   );
   if (partial) return partial;
 
-  // Fuzzy match using Levenshtein — threshold of 3 changes
   const THRESHOLD = 3;
   let bestMatch = null;
   let bestDistance = THRESHOLD + 1;
@@ -195,40 +116,17 @@ function findPlayer(playerName, club, allPlayers, teams) {
 
   if (bestMatch) return bestMatch;
 
-  // Last resort — fuzzy match across all players if team not found
-  if (teamId) return findPlayer(playerName, "", allPlayers, teams);
-
-  return null;
-}
-  // Find team ID from club name
-  const team = teams.find(t => normalise(t.name).includes(normClub) || normClub.includes(normalise(t.name)));
-  const teamId = team?.id;
-
-  // Try exact web_name match first within the team
   if (teamId) {
-    const exact = allPlayers.find(p => p.team === teamId && normalise(p.web_name) === normName);
-    if (exact) return exact;
-
-    // Try second name match within team
-    const secondName = allPlayers.find(p => p.team === teamId && normalise(p.second_name) === normName);
-    if (secondName) return secondName;
-
-    // Try partial match within team
-    const partial = allPlayers.find(p => p.team === teamId && (
-      normalise(p.web_name).includes(normName) || normName.includes(normalise(p.web_name)) ||
-      normalise(p.second_name).includes(normName) || normName.includes(normalise(p.second_name))
-    ));
-    if (partial) return partial;
+    const fallback = allPlayers.find(p =>
+      normalise(p.web_name) === normName ||
+      normalise(p.second_name) === normName ||
+      normalise(p.web_name).includes(normName) ||
+      normName.includes(normalise(p.web_name))
+    );
+    if (fallback) return fallback;
   }
 
-  // Fallback: search all players
-  const fallback = allPlayers.find(p =>
-    normalise(p.web_name) === normName ||
-    normalise(p.second_name) === normName ||
-    normalise(p.web_name).includes(normName) ||
-    normName.includes(normalise(p.web_name))
-  );
-  return fallback || null;
+  return null;
 }
 
 function buildTeamConcededMap(fixtures) {
