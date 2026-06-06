@@ -58,7 +58,7 @@ function parseTeam(raw) {
 
   // Remaining lines: players
   const players = [];
-  const playerLineRegex = /^(.+?)\s*-+\s*(.+?)(\s*\(c\))?$/i;
+  const playerLineRegex = /^(.+?)\s*-\s*(.+?)(\s*\(c\))?$/i;
 
   for (const line of lines) {
     if (line.match(/game\s*week/i) || line.match(/^gw\s*\d+/i)) continue;
@@ -92,86 +92,68 @@ function levenshtein(a, b) {
   return dp[a.length][b.length];
 }
 
-function findPlayer(playerName, club, allPlayers, teams, positionHint, managerName, registry) {
+// Find a player by matching against the manager's owned players in the registry first
+// Falls back to not found if no match — scored as 0 and flagged for admin
+function findPlayer(playerName, club, allPlayers, teams, managerName, registry) {
   const normName = normalise(playerName);
   const normClub = normalise(club);
 
-  const team = teams.find(t =>
-    normalise(t.name).includes(normClub) ||
-    normClub.includes(normalise(t.name))
-  );
-  const teamId = team?.id;
+  // Get the FPL IDs owned by this manager
+  const ownedIds = Object.entries(registry)
+    .filter(([, entry]) => entry?.manager === managerName && entry?.status === "sold")
+    .map(([id]) => parseInt(id));
 
-  const candidates = teamId
-    ? allPlayers.filter(p => p.team === teamId)
-    : allPlayers;
+  // Build the list of owned player objects
+  const ownedPlayers = allPlayers.filter(p => ownedIds.includes(p.id));
 
-  // Get all name matches first
-  function getMatches(pool) {
-    const exact = pool.filter(p => normalise(p.web_name) === normName || normalise(p.second_name) === normName);
-    if (exact.length > 0) return exact;
+  // Try to match within owned players
+  function matchInPool(pool) {
+    // Exact web_name
+    const exact = pool.find(p => normalise(p.web_name) === normName);
+    if (exact) return exact;
 
-    const partial = pool.filter(p =>
+    // Exact second_name or any part of compound surname
+    const secondExact = pool.find(p => {
+      const parts = p.second_name.split(' ').map(normalise);
+      return normalise(p.second_name) === normName || parts.includes(normName);
+    });
+    if (secondExact) return secondExact;
+
+    // Partial match
+    const partial = pool.find(p =>
       normalise(p.web_name).includes(normName) ||
       normName.includes(normalise(p.web_name)) ||
       normalise(p.second_name).includes(normName) ||
       normName.includes(normalise(p.second_name))
     );
-    if (partial.length > 0) return partial;
+    if (partial) return partial;
 
-    // Fuzzy
+    // Fuzzy match with Levenshtein
     const THRESHOLD = 3;
+    let bestMatch = null;
     let bestDistance = THRESHOLD + 1;
-    let fuzzyMatches = [];
-      for (const p of pool) {
-      const secondParts = p.second_name.split(' ').map(normalise);
-      const secondDist = Math.min(...secondParts.map(part => levenshtein(normName, part)));
+    for (const p of pool) {
+      const parts = p.second_name.split(' ').map(normalise);
+      const secondDist = Math.min(...parts.map(part => levenshtein(normName, part)));
       const dist = Math.min(
         levenshtein(normName, normalise(p.web_name)),
         levenshtein(normName, normalise(p.second_name)),
         secondDist
       );
-      if (dist < bestDistance) { bestDistance = dist; fuzzyMatches = [p]; }
-      else if (dist === bestDistance) fuzzyMatches.push(p);
+      if (dist < bestDistance) {
+        bestDistance = dist;
+        bestMatch = p;
+      }
     }
-    return fuzzyMatches;
+    return bestMatch;
   }
 
-  let matches = getMatches(candidates);
-  if (matches.length === 0 && teamId) matches = getMatches(allPlayers);
-  if (matches.length === 0) return null;
-  if (matches.length === 1) return matches[0];
+  // First try owned players
+  const ownedMatch = matchInPool(ownedPlayers);
+  if (ownedMatch) return { player: ownedMatch, owned: true };
 
-  // Multiple matches — disambiguate
-
-  // 1. Registry ownership — prefer player owned by this manager
-  if (managerName && registry) {
-    const FPL_POS = { 1: "GK", 2: "DEF", 3: "MID", 4: "FWD" };
-    const owned = matches.filter(p =>
-      Object.entries(registry).some(([id, entry]) =>
-        parseInt(id) === p.id && entry?.manager === managerName && entry?.status === "sold"
-      )
-    );
-    if (owned.length === 1) return owned[0];
-
-    // 2. Position hint from formation
-    if (positionHint) {
-      const posMatch = owned.length > 0
-        ? owned.filter(p => FPL_POS[p.element_type] === positionHint)
-        : matches.filter(p => FPL_POS[p.element_type] === positionHint);
-      if (posMatch.length === 1) return posMatch[0];
-    }
-  }
-
-  // 3. Position hint without registry
-  if (positionHint) {
-    const FPL_POS = { 1: "GK", 2: "DEF", 3: "MID", 4: "FWD" };
-    const posMatch = matches.filter(p => FPL_POS[p.element_type] === positionHint);
-    if (posMatch.length === 1) return posMatch[0];
-  }
-
-  // Fall back to first match
-  return matches[0];
+  // Not found in registry — return null, will be scored as 0 and flagged
+  return null;
 }
 
 function buildTeamConcededMap(fixtures) {
@@ -323,20 +305,13 @@ export default function Scoring({ theme }) {
       const teamConcededMap = buildTeamConcededMap(fixtureData);
 
       // Score each player
-      const posGroups = getPositionGroups(parsed.formation);
-      const scoredPlayers = parsed.players.map((p, idx) => {
-        const positionHint = getPlayerPositionFromIndex(idx, posGroups);
-        const fplPlayer = findPlayer(p.name, p.club, fplData.elements, fplData.teams, positionHint, parsed.managerName, registry);
+      const scoredPlayers = parsed.players.map((p) => {
+        const result = findPlayer(p.name, p.club, fplData.elements, fplData.teams, parsed.managerName, registry);
+        const fplPlayer = result?.player || null;
+        const owned = result?.owned || false;
         const fplTeam = fplPlayer ? fplData.teams.find(t => t.id === fplPlayer.team) : null;
         const position = fplPlayer ? FPL_POSITIONS[fplPlayer.element_type] : "MID";
         const stats = fplPlayer ? statsById[fplPlayer.id] : null;
-
-        // Check ownership
-        const owned = fplPlayer
-          ? Object.entries(registry).some(([id, entry]) =>
-              parseInt(id) === fplPlayer.id && entry?.manager === parsed.managerName &&
-              (entry?.status === "sold" || entry?.manager))
-          : false;
 
         const { points, breakdown, notPlayed } = scorePlayer(
           stats, position, p.isCaptain, fplPlayer?.team, teamConcededMap
@@ -353,7 +328,7 @@ export default function Scoring({ theme }) {
           breakdown,
           notPlayed,
           notFound: !fplPlayer,
-          notOwned: fplPlayer && !owned,
+          notOwned: !owned,
         };
       });
 
